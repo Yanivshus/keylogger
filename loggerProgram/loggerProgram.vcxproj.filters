@@ -18,9 +18,15 @@
     <ClInclude Include="logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WSAInitializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="logger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WSAInitializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

