@@ -6,4 +6,4 @@
 #define STR_SIZE 1024
 
 DWORD GetProcessIdByName(const std::wstring& processName);
-boolean inject(const std::string& dllName, std::string& procName);
+void inject(const std::string& dllName, const std::string& procName);

@@ -1,11 +1,12 @@
 #include "dllHandling.h"
 
-boolean inject(const std::string& dllName, std::string& procName)
+void inject(const std::string& dllName, const std::string& procName)
 {
     DWORD err;
     char dllFull[STR_SIZE] = {};
     // Get full path of DLL to inject
-    DWORD pathLen = GetFullPathNameA("mydll.dll", STR_SIZE, dllFull, NULL);
+    DWORD pathLen = GetFullPathNameA(dllName.c_str(), STR_SIZE, dllFull, NULL);
+    
 
     // Get LoadLibrary function address –
     // the address doesn't change at remote process
@@ -18,7 +19,7 @@ boolean inject(const std::string& dllName, std::string& procName)
     HANDLE proc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, id);
     if (proc == NULL) {
         std::cout << "couldnt open process" << std::endl;
-        return false;
+        //return false;
     }
 
     // Get a pointer to memory location in remote process,
@@ -27,7 +28,7 @@ boolean inject(const std::string& dllName, std::string& procName)
     if (NULL == memAddr) {
         std::cout << "couldnt alloc" << std::endl;
         err = GetLastError();
-        return false;
+       // return false;
     }
 
     // Write DLL name to remote process memory
@@ -35,7 +36,7 @@ boolean inject(const std::string& dllName, std::string& procName)
     if (0 == check) {
         err = GetLastError();
         std::cout << "not working" << std::endl;
-        return false;
+       // return false;
 
     }
 
@@ -45,11 +46,11 @@ boolean inject(const std::string& dllName, std::string& procName)
     if (NULL == hRemote) {
         std::cout << "couldnt create remote thread" << std::endl;
         err = GetLastError();
-        return false;
+        //return false;
     }
     WaitForSingleObject(hRemote, INFINITE);
     check = CloseHandle(hRemote);
-    return true;
+    //return true;
 }
 
 
