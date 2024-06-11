@@ -2,7 +2,6 @@
 #define DLL_EXPORT
 
 
-#include <WinSock2.h>
 #include <Windows.h>
 
 #include <iostream>
@@ -63,7 +62,42 @@ extern "C"
         // Close process and thread handles
         CloseHandle(processInfo.hProcess);
         CloseHandle(processInfo.hThread);
+
 	}
+    DECLDIR void startHook()
+    {
+        MODULEINFO modInfo = { 0 };
+        HMODULE hModule = GetModuleHandle(0);
+
+        GetModuleInformation(GetCurrentProcess(), hModule, &modInfo, sizeof(MODULEINFO));
+
+        LPBYTE pAdress = (LPBYTE)modInfo.lpBaseOfDll;
+        PIMAGE_DOS_HEADER pIDH = (PIMAGE_DOS_HEADER)pAdress;
+
+        // get start of the modules memory
+        PIMAGE_NT_HEADERS pINH = (PIMAGE_NT_HEADERS)(pAdress + pIDH->e_lfanew);
+        PIMAGE_OPTIONAL_HEADER pIOH = (PIMAGE_OPTIONAL_HEADER) & (pINH->OptionalHeader);
+        PIMAGE_IMPORT_DESCRIPTOR pIID = (PIMAGE_IMPORT_DESCRIPTOR)(pAdress + pIOH->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+
+        for (; pIID->Characteristics; pIID++)
+        {
+            if (!strcmp("ntdll.dll", (char*)(pAdress + pIID->Name))) {
+                break;
+            }
+        }
+
+        PIMAGE_THUNK_DATA pITD = (PIMAGE_THUNK_DATA)(pAdress + pIID->OriginalFirstThunk);
+        PIMAGE_THUNK_DATA pFirstThunkTest = (PIMAGE_THUNK_DATA)(pAdress + pIID->FirstThunk);
+        PIMAGE_IMPORT_BY_NAME pIIBM;
+
+        for (; !(pITD->u1.Ordinal & IMAGE_ORDINAL_FLAG) && pITD->u1.AddressOfData; pITD++) {
+            pIIBM = (PIMAGE_IMPORT_BY_NAME)(pAdress + pITD->u1.AddressOfData);
+            if(!strcmp("NtQuerySystemInformation", (char*)pIIBM->Name))
+
+        }
+
+
+    }
 }
 
 
