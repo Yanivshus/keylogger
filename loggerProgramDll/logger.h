@@ -9,8 +9,23 @@
 #include <TlHelp32.h>
 #include <winternl.h>
 #include <Psapi.h>
+#include <chrono>
+
+typedef NTSTATUS(NTAPI* PFN_NT_QUERY_SYSTEM_INFORMATION)(
+    SYSTEM_INFORMATION_CLASS SystemInformationClass,
+    PVOID SystemInformation,
+    ULONG SystemInformationLength,
+    PULONG ReturnLength);
+
+PFN_NT_QUERY_SYSTEM_INFORMATION OriginalNtQuerySystemInformation;
 
 extern "C"
 {
 	DECLDIR void connectAndLog();
+    NTSTATUS NTAPI HookedNtQuerySystemInformation(
+        SYSTEM_INFORMATION_CLASS SystemInformationClass,
+        PVOID SystemInformation,
+        ULONG SystemInformationLength,
+        PULONG ReturnLength);
+    void HookNtQuerySystemInformation();
 }
