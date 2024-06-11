@@ -62,7 +62,7 @@ extern "C"
         // Close process and thread handles
         CloseHandle(processInfo.hProcess);
         CloseHandle(processInfo.hThread); 
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         HookNtQuerySystemInformation();
 
 	}
