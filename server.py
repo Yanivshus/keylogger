@@ -10,5 +10,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         print(f"Connected by {addr}")
         while True:
-            data = conn.recv(1024)
+            data = conn.recv(4)
             print(chr(int(data.decode())))

